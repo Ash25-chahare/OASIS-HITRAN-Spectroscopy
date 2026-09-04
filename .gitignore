@@ -1,0 +1,9 @@
+backend/venv/
+__pycache__/
+*.py[cod]
+.streamlit/secrets.toml
+
+# Local/generated scientific data
+backend/oasis.db
+data_cache/*.data
+data_cache/*.header
