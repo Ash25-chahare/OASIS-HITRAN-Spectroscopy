@@ -364,6 +364,7 @@ FAILURE_CATEGORIES = {
 # ─────────────────────────────────────────────────────────────────
 # HELPER FUNCTIONS
 # ─────────────────────────────────────────────────────────────────
+
 @st.cache_data(show_spinner=False)
 def load_hitran_parameters():
     # Attempt 1: Check BASE_DIR / oasis.db
@@ -390,6 +391,7 @@ def load_hitran_parameters():
         pass
 
     # Fallback: Auto-generate reference lines from standard HITRAN species metadata
+    # Ensures zero crashes on fresh cloud deployments before oasis.py is run.
     rows = []
     for mol_id, name in HITRAN_MOLECULES.items():
         presets = SPECTRAL_PRESETS.get(name, [("Standard Band", 2200.0, 2400.0)])
@@ -407,6 +409,14 @@ def load_hitran_parameters():
                 "band_name": p_name,
             })
     return pd.DataFrame(rows)
+
+
+
+
+def hapi_table_name(molecule_id):
+    return f"mol_{int(molecule_id)}_sample"
+
+
 def dynamic_hapi_table_name(molecule_id, isotopologue_id, start_nu, end_nu):
     start_key = int(round(float(start_nu) * 100))
     end_key   = int(round(float(end_nu)   * 100))
@@ -2711,7 +2721,11 @@ with tab2:
         # Build molecule selectbox labels with support tags
         local_counts = {}
         if not sim_source_df.empty:
-            local_counts = sim_source_df.groupby("molecule_id")["wavenumber"].size().to_dict()
+            if "molecule_id" in sim_source_df.columns:
+                local_counts = sim_source_df.groupby("molecule_id")["wavenumber"].size().to_dict()
+            elif "mol_id" in sim_source_df.columns:
+                local_counts = sim_source_df.groupby("mol_id")["wavenumber"].size().to_dict()
+
 
         def mol_label(mol_id, formula):
             sup = MOLECULE_SUPPORT_MAP.get(mol_id, {}).get("status", "UNKNOWN")
