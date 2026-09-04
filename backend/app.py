@@ -364,7 +364,6 @@ FAILURE_CATEGORIES = {
 # ─────────────────────────────────────────────────────────────────
 # HELPER FUNCTIONS
 # ─────────────────────────────────────────────────────────────────
-
 @st.cache_data(show_spinner=False)
 def load_hitran_parameters():
     # Attempt 1: Check BASE_DIR / oasis.db
@@ -377,6 +376,7 @@ def load_hitran_parameters():
                 return df
     except Exception:
         pass
+
     # Attempt 2: Check PROJECT_DIR / hitran_parameters.db
     alt_db = PROJECT_DIR / "hitran_parameters.db"
     try:
@@ -388,6 +388,7 @@ def load_hitran_parameters():
                 return df
     except Exception:
         pass
+
     # Fallback: Auto-generate reference lines from standard HITRAN species metadata
     rows = []
     for mol_id, name in HITRAN_MOLECULES.items():
@@ -395,15 +396,17 @@ def load_hitran_parameters():
         for p_name, s_nu, e_nu in presets:
             mid_nu = (s_nu + e_nu) / 2.0
             rows.append({
+                "id": mol_id,
                 "molecule_name": name,
-                "wavenumber": mid_nu,
+                "molecule_id": int(mol_id),
+                "isotopologue_id": 1,
+                "wavenumber": float(mid_nu),
                 "intensity": 1e-19,
+                "air_broadened_width": 0.05,
+                "lower_state_energy": 100.0,
                 "band_name": p_name,
-                "mol_id": mol_id,
             })
     return pd.DataFrame(rows)
-
-
 def dynamic_hapi_table_name(molecule_id, isotopologue_id, start_nu, end_nu):
     start_key = int(round(float(start_nu) * 100))
     end_key   = int(round(float(end_nu)   * 100))
